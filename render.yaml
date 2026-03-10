@@ -3,5 +3,5 @@ services:
     name: sga-ensae-dakar
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT --timeout 120
     plan: free
