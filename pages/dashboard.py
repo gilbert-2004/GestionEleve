@@ -3,6 +3,7 @@ from dash import html, dcc, callback, Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+from sqlalchemy.orm import joinedload
 from models.database import get_db, Student, Course, Session, Grade
 from utils.layout import page_header, stat_mini, C
 
@@ -102,9 +103,10 @@ def heures(_):
 @callback(Output("dash-abs","figure"), Input("dash-interval","n_intervals"))
 def abs_chart(_):
     db = get_db()
-    sessions = db.query(Session).all(); db.close()
+    sessions = db.query(Session).options(joinedload(Session.attendances)).all()
     data = {}
     for s in sessions: data[s.course_code] = data.get(s.course_code, 0) + len(s.attendances)
+    db.close()
     if not data: return go.Figure().update_layout(**CHART)
     df = pd.DataFrame(list(data.items()), columns=["cours","absences"])
     bar_colors = [C["danger"] if v > 5 else OR if v > 2 else BLU for v in df["absences"]]
@@ -135,7 +137,7 @@ def filieres(_):
 @callback(Output("dash-recent","children"), Input("dash-interval","n_intervals"))
 def recent(_):
     db = get_db()
-    sessions = db.query(Session).order_by(Session.date.desc()).limit(8).all()
+    sessions = db.query(Session).options(joinedload(Session.attendances)).order_by(Session.date.desc()).limit(8).all()
     db.close()
     if not sessions:
         return html.Div("Aucune séance.", style={"color":C["muted"],"padding":"16px"})
