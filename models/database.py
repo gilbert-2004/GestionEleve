@@ -4,9 +4,22 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Fore
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 BASE_DIR     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH      = os.path.join(BASE_DIR, "data", "sga_ensae_dakar.db")
-DATABASE_URL = f"sqlite:///{DB_PATH}"
-engine       = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "sga_ensae_dakar.db")
+DB_PATH         = os.getenv("DB_PATH", DEFAULT_DB_PATH)
+RAW_DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+
+if RAW_DATABASE_URL:
+    # Render and some providers may expose a postgres:// URL.
+    if RAW_DATABASE_URL.startswith("postgres://"):
+        RAW_DATABASE_URL = RAW_DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+    elif RAW_DATABASE_URL.startswith("postgresql://") and "+" not in RAW_DATABASE_URL.split("://", 1)[0]:
+        RAW_DATABASE_URL = RAW_DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+    DATABASE_URL = RAW_DATABASE_URL
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+else:
+    DATABASE_URL = f"sqlite:///{DB_PATH}"
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base         = declarative_base()
 
@@ -62,9 +75,10 @@ class Grade(Base):
     course      = relationship("Course",  back_populates="grades")
 
 def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    if DATABASE_URL.startswith("sqlite:///"):
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     Base.metadata.create_all(bind=engine)
-    print(f"[DB] Base initialisée : {DB_PATH}")
+    print(f"[DB] Base initialisee : {DATABASE_URL}")
 
 def get_db():
     return SessionLocal()
