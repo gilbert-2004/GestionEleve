@@ -3,6 +3,7 @@ from dash import html, dcc, callback, Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+from sqlalchemy.orm import joinedload
 from models.database import get_db, Student, Course, Grade, Session
 from utils.layout import page_header, C
 
@@ -90,11 +91,16 @@ def hist(code, _):
 @callback(Output("ana-rank","figure"), Input("ana-interval","n_intervals"))
 def rank(_):
     db = get_db()
-    grades = db.query(Grade).all(); db.close()
-    if not grades: return go.Figure().update_layout(**CHART)
-    df = pd.DataFrame([{"id":g.id_student,
-                        "nom":f"{g.student.nom} {g.student.prenom[:1]}." if g.student else str(g.id_student),
-                        "note":g.note,"coef":g.coefficient} for g in grades])
+    grades = db.query(Grade).options(joinedload(Grade.student)).all()
+    df_rows = [{
+        "id": g.id_student,
+        "nom": f"{g.student.nom} {g.student.prenom[:1]}." if g.student else str(g.id_student),
+        "note": g.note,
+        "coef": g.coefficient,
+    } for g in grades]
+    db.close()
+    if not df_rows: return go.Figure().update_layout(**CHART)
+    df = pd.DataFrame(df_rows)
     moy = df.groupby(["id","nom"]).apply(lambda x:(x["note"]*x["coef"]).sum()/x["coef"].sum()).reset_index(name="moy")
     moy = moy.sort_values("moy", ascending=True).tail(12)
     bar_colors = [GRN if v>=14 else BLU if v>=10 else C["danger"] for v in moy["moy"]]
@@ -143,12 +149,12 @@ def mention_pie(_):
 @callback(Output("ana-filiere","figure"), Input("ana-interval","n_intervals"))
 def par_filiere(_):
     db = get_db()
-    grades = db.query(Grade).all(); db.close()
-    if not grades: return go.Figure().update_layout(**CHART)
+    grades = db.query(Grade).options(joinedload(Grade.student)).all()
     rows = []
     for g in grades:
         if g.student:
             rows.append({"filiere":g.student.filiere or "?","note":g.note,"coef":g.coefficient})
+    db.close()
     if not rows: return go.Figure().update_layout(**CHART)
     df = pd.DataFrame(rows)
     moy = df.groupby("filiere").apply(lambda x:(x["note"]*x["coef"]).sum()/x["coef"].sum()).reset_index(name="moyenne")
