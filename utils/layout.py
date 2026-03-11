@@ -237,7 +237,7 @@ body{font-family:'Inter',sans-serif;background:#F8FBFF;color:#0D1B2A;font-size:1
 """
 
 
-def build_navbar(username=None):
+def build_navbar():
     from dash import dcc
     links = [
         ("/accueil",   "Accueil"),
@@ -258,40 +258,12 @@ def build_navbar(username=None):
                 html.Div("Système de Gestion Académique", className="sga-brand-sub"),
             ]),
         ]),
-        html.Div(style={"display":"flex","alignItems":"center","gap":"6px"}, children=[
-            html.Div(className="sga-nav-links", children=[
-                dcc.Link(label, href=href, className="sga-nav-link")
-                for href, label in links
-            ]),
-            html.Div(style={"width":"1px","height":"28px","background":"rgba(255,255,255,0.2)","margin":"0 8px"}),
-            html.Div(style={"display":"flex","alignItems":"center","gap":"8px"}, children=[
-                html.Div(style={
-                    "display":"flex","alignItems":"center","gap":"6px",
-                    "background":"rgba(255,255,255,0.08)","borderRadius":"8px",
-                    "padding":"5px 10px","border":"1px solid rgba(255,255,255,0.15)",
-                }, children=[
-                    html.Div(style={
-                        "width":"26px","height":"26px","borderRadius":"50%",
-                        "background":"rgba(249,168,37,0.25)","border":"1.5px solid #F9A825",
-                        "display":"flex","alignItems":"center","justifyContent":"center",
-                        "fontSize":"12px","fontWeight":"800","color":"#F9A825",
-                    }, children=(username[0].upper() if username else "U")),
-                    html.Span(username or "Utilisateur", style={
-                        "fontSize":"12px","fontWeight":"600","color":"rgba(255,255,255,0.85)",
-                    }),
-                ]),
-                html.Button("Déconnexion", id="btn-logout", style={
-                    "background":"rgba(198,40,40,0.15)",
-                    "color":"#EF9A9A",
-                    "border":"1px solid rgba(198,40,40,0.4)",
-                    "borderRadius":"8px",
-                    "padding":"6px 13px",
-                    "fontSize":"12px","fontWeight":"700",
-                    "cursor":"pointer",
-                }),
-            ]),
+        html.Div(className="sga-nav-links", children=[
+            dcc.Link(label, href=href, className="sga-nav-link")
+            for href, label in links
         ]),
     ])
+
 
 def build_footer():
     return html.Div(className="sga-footer", children=[

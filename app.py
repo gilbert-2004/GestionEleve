@@ -98,21 +98,6 @@ USERS = {
     Input("url",               "pathname"),
     State("auth-store",        "data"),
 )
-
-
-@callback(
-    Output("url",        "pathname", allow_duplicate=True),
-    Output("auth-store", "data",     allow_duplicate=True),
-    Input("btn-logout",  "n_clicks"),
-    prevent_initial_call=True,
-)
-def do_logout(n):
-    if n:
-        return "/login", None
-    return no_update, no_update
-
-
-
 def display_page(pathname, auth):
     pathname = pathname or "/"
     if pathname == "/login":
@@ -120,8 +105,7 @@ def display_page(pathname, auth):
     if not (auth and auth.get("logged_in")):
         return pages.login.layout(), None, None
 
-    username = auth.get("user", "") if auth else ""
-    navbar = build_navbar(username=username)
+    navbar = build_navbar()
     footer = build_footer()
     mod    = ROUTES.get(pathname)
 
